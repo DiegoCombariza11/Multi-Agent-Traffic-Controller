@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-11-19 00:19:01 by Eclipse SUMO GUI Version 1.24.0
+<!-- generated on 2025-11-19 01:02:39 by Eclipse SUMO sumo Version 1.24.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\TestLightsSogamosoNet.net.xml"/>
-        <route-files value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\osm.passenger.trips.xml"/>
-        <additional-files value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\output.add.xml"/>
+        <net-file value="./sumoData/TestLightsSogamosoNet.net.xml"/>
+        <route-files value="./sumoData/osm.passenger.trips.xml"/>
+        <additional-files value="./sumoData/output.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\tripinfos.xml"/>
-        <statistic-output value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\stats.xml"/>
+        <tripinfo-output value="./sumoData/tripinfos.xml"/>
+        <statistic-output value="./sumoData/stats.xml"/>
     </output>
 
     <processing>
         <ignore-route-errors value="true"/>
+        <waiting-time-memory value="1000"/>
         <tls.actuated.jam-threshold value="30"/>
     </processing>
 
@@ -30,22 +31,12 @@
         <no-step-log value="true"/>
     </report>
 
+    <traci_server>
+        <remote-port value="43173"/>
+    </traci_server>
+
     <gui_only>
-        <gui-settings-file value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\osm.view.xml"/>
+        <gui-settings-file value="./sumoData/osm.view.xml"/>
     </gui_only>
 
 </sumoConfiguration>
--->
-
-<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
-    <performance clockBegin="50111.73" clockEnd="50120.23" clockDuration="8.51" traciDuration="0.26" realTimeFactor="20.58" vehicleUpdatesPerSecond="3512.29" personUpdatesPerSecond="0.00" begin="0.00" end="175.00" duration="175.00"/>
-    <vehicles loaded="414" inserted="358" running="325" waiting="0"/>
-    <teleports total="0" jam="0" yield="0" wrongLane="0"/>
-    <safety collisions="0" emergencyStops="0" emergencyBraking="0"/>
-    <persons loaded="0" running="0" jammed="0"/>
-    <personTeleports total="0" abortWait="0" wrongDest="0"/>
-    <vehicleTripStatistics count="33" routeLength="1231.64" speed="13.25" duration="89.70" waitingTime="0.57" timeLoss="19.20" departDelay="0.59" departDelayWaiting="-1.00" totalTravelTime="2960.00" totalDepartDelay="19.58"/>
-    <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
-    <rideStatistics number="0"/>
-    <transportStatistics number="0"/>
-</statistics>

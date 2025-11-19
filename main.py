@@ -1,227 +1,201 @@
 import traci
+import numpy as np
+import pandas as pd
 import sys
 import os
-import time
-import google.generativeai as genai
-from agent import RLAgent # ¡Importa la clase que acabamos de crear!
+import math
 
-# --- 1. CONFIGURACIÓN INICIAL (DATOS DE TU COMPAÑERO DE SUMO) ---
+# --- CONFIGURACIÓN ---
+SUMO_CMD = ["sumo", "-c", "./sumoData/SumoConfigSim.sumocfg", "--no-step-log", "true", "--waiting-time-memory", "1000"]
+# Usa "sumo-gui" si quieres ver la simulación visualmente.
 
-# Ubicación del archivo de configuración de SUMO
-SUMO_CONFIG_FILE = "path/to/your/simulation.sumocfg"
+# Parámetros de Q-Learning
+ALPHA = 0.1       # Tasa de aprendizaje
+GAMMA = 0.99      # Factor de descuento
+EPSILON = 1.0     # Exploración inicial
+EPSILON_DECAY = 0.995
+MIN_EPSILON = 0.01
+EPISODES = 50     
+SIMULATION_STEPS_PER_ACTION = 5 # Segundos entre decisiones
 
-# IDs de los semáforos (deben coincidir con el .net.xml)
-TLS_ID_LIST = ["J1", "J2", "J3", "J4"]
+# --- CLASE AGENTE ---
+class QLearningAgent:
+    def __init__(self, agent_id, action_space_size):
+        self.id = agent_id
+        self.q_table = {} 
+        self.action_space_size = action_space_size
+        self.alpha = ALPHA
+        self.gamma = GAMMA
+        self.epsilon = EPSILON
 
-# Definición de las Fases (ACCIONES que los agentes pueden tomar)
-# Esto es CRÍTICO.
-# Asumimos: Fase 0 = N-S Verde, Fase 2 = E-O Verde
-AGENT_ACTIONS = [0, 2] 
+    def get_q_values(self, state):
+        if state not in self.q_table:
+            self.q_table[state] = np.zeros(self.action_space_size)
+        return self.q_table[state]
 
-# Mapeo de Fases Verdes a Fases Amarillas (¡Para transiciones seguras!)
-# Tu compañero de SUMO debe darte esto.
-# {tls_id: {green_phase_index: yellow_phase_index}}
-YELLOW_PHASE_MAP = {
-    "J1": {0: 1, 2: 3}, # ej: En J1, la fase 0 (N-S) es seguida por la 1 (N-S Amarilla)
-    "J2": {0: 1, 2: 3},
-    "J3": {0: 1, 2: 3},
-    "J4": {0: 1, 2: 3}
-}
+    def choose_action(self, state):
+        if np.random.rand() < self.epsilon:
+            return np.random.randint(self.action_space_size) 
+        else:
+            return np.argmax(self.get_q_values(state)) 
 
-# Carriles de entrada para cada agente (LOS "OJOS")
-# {tls_id: {"N": [lista_carriles], "S": [...], ...}}
-AGENT_ENTRY_LANES = {
-    "J1": {
-        "N": ["lane_J1_N_0", "lane_J1_N_1"], "S": ["lane_J1_S_0"],
-        "E": ["lane_J1_E_0"], "W": ["lane_J1_W_0"]
-    },
-    "J2": {
-        "N": ["lane_J2_N_0"], "S": ["lane_J2_S_0"],
-        "E": ["lane_J2_E_0"], "W": ["lane_J2_W_0"]
-    },
-    # ... (Configuración para J3 y J4) ...
-    "J3": {}, 
-    "J4": {}
-}
-
-# IDs de los carteles viales
-VMS_IDS = ["vms_1", "vms_2"]
-
-# --- 2. PARÁMETROS DE SIMULACIÓN Y LLM ---
-
-# Tiempos del ciclo del semáforo (en segundos)
-TIME_GREEN_PHASE = 15  # Duración mínima de una fase verde
-TIME_YELLOW_PHASE = 4   # Duración de la fase amarilla
-STEP_LENGTH = 1.0       # Dejar en 1.0 para 1 segundo por paso
-
-# Configuración del LLM (Google Gemini)
-try:
-    genai.configure(api_key=os.environ.get("GOOGLE_API_KEY"))
-    llm_model = genai.GenerativeModel('gemini-pro')
-except Exception as e:
-    print(f"Error al configurar el LLM: {e}")
-    llm_model = None
-
-# --- 3. FUNCIONES AUXILIARES ---
-
-def start_simulation():
-    """Inicia SUMO-GUI y TraCI."""
-    # sumocfg: el archivo de config
-    # step-length: 1 paso = 1 segundo (importante)
-    sumo_cmd = ["sumo-gui", "-c", SUMO_CONFIG_FILE, "--step-length", str(STEP_LENGTH)]
-    traci.start(sumo_cmd)
-
-def call_llm_api(system_data):
-    """
-    Envía datos al LLM y actualiza los carteles VMS en SUMO.
-    """
-    if not llm_model:
-        print("LLM no configurado. Saltando actualización de VMS.")
-        return
-
-    # El prompt "inteligente" que discutimos
-    prompt = f"""
-    Eres un experto en gestión de tráfico.
-    Contexto de la Simulación (Telemetría en VIVO):
-    ```json
-    {system_data}
-    ```
-    Tu Tarea:
-    Genera un mensaje corto (máx 10 palabras) para un cartel vial (VMS) 
-    basado en la zona crítica y el tiempo de espera.
-    """
-    
-    try:
-        response = llm_model.generate_content(prompt)
-        vms_message = response.text.strip().replace('"', '') # Limpiar la respuesta
+    def learn(self, state, action, reward, next_state):
+        old_q = self.get_q_values(state)[action]
+        next_max = np.max(self.get_q_values(next_state))
         
-        print(f"[LLM] Mensaje generado: {vms_message}")
+        target = reward + self.gamma * next_max
+        td_error = target - old_q
+        new_q = old_q + self.alpha * td_error
+        
+        self.q_table[state][action] = new_q
+        return td_error 
 
-        # Actualizar todos los carteles en la simulación
-        for vms_id in VMS_IDS:
-            traci.vms.setText(vms_id, vms_message)
-            
-    except Exception as e:
-        print(f"Error al llamar al LLM: {e}")
+# --- FUNCIONES AUXILIARES ---
+def get_state(tls_id, controlled_lanes):
+    # Estado simplificado: Discretización de colas por carril
+    state = ""
+    for lane in controlled_lanes[tls_id]:
+        q = traci.lane.getLastStepHaltingNumber(lane)
+        if q < 3: state += "0"      # Libre
+        elif q < 10: state += "1"   # Ocupado
+        else: state += "2"          # Congestionado
+    return state
 
-# --- 4. BUCLE PRINCIPAL DE EJECUCIÓN ---
+def get_reward(tls_id, controlled_lanes):
+    # Recompensa local: Negativo de la espera total en esa intersección
+    waiting_time = 0
+    for lane in controlled_lanes[tls_id]:
+        waiting_time += traci.lane.getLastStepHaltingNumber(lane)
+    return -1 * waiting_time
 
-def run_simulation():
-    """
-    Orquesta la simulación completa: 
-    Crea agentes, ejecuta el bucle, y maneja el aprendizaje.
-    """
-    start_simulation()
+def get_total_phases(tls_id):
+    # Obtiene el número de fases del programa actual
+    logic = traci.trafficlight.getAllProgramLogics(tls_id)[0]
+    return len(logic.phases)
+
+# --- ENTRENAMIENTO MULTI-AGENTE ---
+def run():
+    # 1. Inicialización preliminar para detectar la red
+    traci.start(SUMO_CMD)
+    tls_ids = traci.trafficlight.getIDList() # Obtener TODOS los semáforos
     
-    # 1. Crear los 4 agentes
+    # Diccionarios para guardar información estática de cada semáforo
+    controlled_lanes = {}
+    num_phases = {}
     agents = {}
-    for tls_id in TLS_ID_LIST:
-        agents[tls_id] = RLAgent(
-            agent_id=f"Agent_{tls_id}",
-            traffic_light_id=tls_id,
-            actions=AGENT_ACTIONS,
-            entry_lane_ids=AGENT_ENTRY_LANES.get(tls_id, {})
-        )
-
-    # 2. Variables para el bucle de control
-    step = 0
     
-    # Diccionarios para almacenar el estado de cada agente
-    agent_state = {tls_id: None for tls_id in TLS_ID_LIST}
-    agent_action = {tls_id: None for tls_id in TLS_ID_LIST}
-    agent_time_in_phase = {tls_id: 0 for tls_id in TLS_ID_LIST}
-
-    # Inicializar el estado de todos los agentes
-    for tls_id, agent in agents.items():
-        agent_state[tls_id] = agent.get_state()
-        # Iniciar con una acción aleatoria (exploración inicial)
-        agent_action[tls_id] = agent.choose_action(agent_state[tls_id])
-
-    # 3. Bucle de Simulación Principal
-    while traci.simulation.getMinExpectedNumber() > 0:
-        traci.simulationStep()
-        step += 1
+    print(f"Se detectaron {len(tls_ids)} semáforos controlables.")
+    
+    for tls in tls_ids:
+        # Guardar carriles que controla cada semáforo (eliminando duplicados con set)
+        controlled_lanes[tls] = list(set(traci.trafficlight.getControlledLanes(tls)))
+        num_phases[tls] = get_total_phases(tls)
         
-        # Incrementar el tiempo en la fase actual para cada agente
-        for tls_id in TLS_ID_LIST:
-            agent_time_in_phase[tls_id] += 1
+        # Crear un agente para este semáforo
+        # Acciones: 0 = Mantener Fase, 1 = Siguiente Fase
+        agents[tls] = QLearningAgent(tls, action_space_size=2)
 
-        # --- LÓGICA DE CONTROL DE SEMÁFOROS (para cada agente) ---
-        for tls_id, agent in agents.items():
-            
-            # ¿Está el agente actualmente en una fase amarilla?
-            current_phase = traci.trafficlight.getPhase(tls_id)
-            is_in_yellow_phase = current_phase in YELLOW_PHASE_MAP[tls_id].values()
-
-            # --- A. Si está en FASE AMARILLA ---
-            if is_in_yellow_phase:
-                # Solo esperar a que termine el tiempo de amarillo
-                if agent_time_in_phase[tls_id] >= TIME_YELLOW_PHASE:
-                    # El amarillo terminó. Poner el verde que se eligió ANTES.
-                    traci.trafficlight.setPhase(tls_id, agent_action[tls_id])
-                    agent_time_in_phase[tls_id] = 0 # Reiniciar contador
-            
-            # --- B. Si está en FASE VERDE ---
-            elif agent_time_in_phase[tls_id] >= TIME_GREEN_PHASE:
-                # El tiempo mínimo de verde ha terminado.
-                # Es hora de APRENDER y DECIDIR de nuevo.
-                
-                # 1. APRENDER (del ciclo que acaba de terminar)
-                reward = agent.get_reward()
-                next_state = agent.get_state()
-                
-                agent.update_q_table(
-                    agent_state[tls_id],  # El estado de la decisión anterior
-                    agent_action[tls_id], # La acción que se tomó
-                    reward,               # La recompensa obtenida
-                    next_state            # El estado resultante
-                )
-                
-                # 2. DECIDIR (para el próximo ciclo)
-                new_action = agent.choose_action(next_state)
-                
-                # 3. Guardar estado y acción para la próxima actualización
-                agent_state[tls_id] = next_state
-                agent_action[tls_id] = new_action
-                
-                # 4. ACTUAR (Iniciar la transición)
-                if current_phase == new_action:
-                    # La decisión es MANTENER el verde.
-                    # Simplemente reinicia el contador y sigue.
-                    agent_time_in_phase[tls_id] = 0 
-                else:
-                    # La decisión es CAMBIAR.
-                    # Iniciar la fase amarilla de transición.
-                    yellow_phase = YELLOW_PHASE_MAP[tls_id][current_phase]
-                    traci.trafficlight.setPhase(tls_id, yellow_phase)
-                    agent_time_in_phase[tls_id] = 0 # Reiniciar contador
-                    
-        # --- FIN DEL BUCLE DE CONTROL ---
-        
-        # --- LLM TRIGGER (Ejecutar cada 60 segundos) ---
-        if step % 60 == 0:
-            print(f"[Paso {step}] Comprobando estado del sistema para LLM...")
-            # Aquí recolectarías los datos de "call_llm_api"
-            system_data = {
-                "timestamp": step,
-                "zona_critica": "J1 (Terminal)", # (Ejemplo)
-                "tiempo_espera_promedio_global": 120 # (Ejemplo, tú lo calcularías)
-            }
-            # call_llm_api(system_data) # Descomentar para activar
-            
-    # 4. Fin de la Simulación
-    print("Simulación terminada. Guardando Q-Tables...")
-    for agent in agents.values():
-        agent.guardar_q_table()
-        
     traci.close()
-    print("Listo.")
 
-# --- 5. PUNTO DE ENTRADA ---
-if __name__ == "__main__":
-    
-    # Asegurarse de que las variables de entorno (API Key) están cargadas
-    if not os.environ.get("GOOGLE_API_KEY"):
-        print("¡ADVERTENCIA! La variable de entorno GOOGLE_API_KEY no está configurada.")
+    # Métricas globales
+    global_metrics = [] 
+
+    # 2. Bucle de Episodios
+    for episode in range(EPISODES):
+        print(f"Iniciando Episodio {episode + 1}/{EPISODES}")
+        traci.start(SUMO_CMD)
         
-    run_simulation()
+        step = 0
+        episode_reward = 0
+        episode_squared_errors = []
+        
+        # Estados iniciales para todos los agentes
+        current_states = {tls: get_state(tls, controlled_lanes) for tls in tls_ids}
+        
+        # Ejecutar simulación hasta que termine o llegue al límite
+        while traci.simulation.getMinExpectedNumber() > 0 and step < 3600:
+            
+            actions = {}
+            
+            # 1. TOMA DE DECISIONES (Todos los agentes deciden)
+            for tls in tls_ids:
+                actions[tls] = agents[tls].choose_action(current_states[tls])
+            
+            # 2. ACTUAR EN EL ENTORNO
+            for tls in tls_ids:
+                if actions[tls] == 1:
+                    # Acción: Cambiar a la siguiente fase (cíclico)
+                    current_p = traci.trafficlight.getPhase(tls)
+                    next_p = (current_p + 1) % num_phases[tls]
+                    traci.trafficlight.setPhase(tls, next_p)
+                else:
+                    # Acción: Mantener fase (no hacer nada explícito, SUMO mantiene por defecto)
+                    pass
+
+            # Avanzar simulación varios pasos (dar tiempo a que la física del tráfico reaccione)
+            step_reward_accum = {tls: 0 for tls in tls_ids}
+            for _ in range(SIMULATION_STEPS_PER_ACTION):
+                traci.simulationStep()
+                step += 1
+                # Acumular espera durante estos segundos
+                for tls in tls_ids:
+                    step_reward_accum[tls] += get_reward(tls, controlled_lanes)
+
+            # 3. APRENDIZAJE (Todos los agentes aprenden de su resultado local)
+            for tls in tls_ids:
+                reward = step_reward_accum[tls]
+                next_state = get_state(tls, controlled_lanes)
+                
+                # Actualizar tabla Q del agente específico
+                td_error = agents[tls].learn(current_states[tls], actions[tls], reward, next_state)
+                
+                # Guardar métricas
+                episode_squared_errors.append(td_error ** 2)
+                episode_reward += reward # Suma global para evaluar la red completa
+                
+                # Actualizar estado actual
+                current_states[tls] = next_state
+
+        traci.close()
+
+        # Cálculo de Métricas del Episodio
+        rms = math.sqrt(np.mean(episode_squared_errors)) if episode_squared_errors else 0
+        # Promedio de epsilon (ya que todos decaen igual, tomamos el de uno cualquiera o el promedio)
+        avg_epsilon = agents[tls_ids[0]].epsilon 
+        
+        global_metrics.append({
+            "Episode": episode + 1, 
+            "Global_Utility_Estimate": episode_reward, 
+            "RMS_Error": rms,
+            "Epsilon": avg_epsilon
+        })
+        
+        print(f"  -> Recompensa Global: {episode_reward:.2f} | RMS: {rms:.4f}")
+
+        # Decaer Epsilon para todos los agentes
+        for tls in tls_ids:
+            agents[tls].epsilon = max(MIN_EPSILON, agents[tls].epsilon * EPSILON_DECAY)
+
+    # --- GUARDAR RESULTADOS ---
+    
+    # 1. Métricas de entrenamiento
+    df_metrics = pd.DataFrame(global_metrics)
+    df_metrics.to_csv("multi_agent_metrics.csv", index=False)
+    print("\nMétricas guardadas en 'multi_agent_metrics.csv'")
+
+    # 2. Tablas Q (Un archivo grande con columna 'Agent_ID' o múltiples archivos)
+    # Aquí guardaremos todo en un solo CSV con una columna extra identificando al semáforo
+    all_q_data = []
+    for tls, agent in agents.items():
+        for s, values in agent.q_table.items():
+            row = {"Agent_ID": tls, "State": s}
+            for i, v in enumerate(values):
+                row[f"Action_{i}"] = v
+            all_q_data.append(row)
+            
+    df_q = pd.DataFrame(all_q_data)
+    df_q.to_csv("multi_agent_q_tables.csv", index=False)
+    print("Tablas Q combinadas guardadas en 'multi_agent_q_tables.csv'")
+
+if __name__ == "__main__":
+    run()
