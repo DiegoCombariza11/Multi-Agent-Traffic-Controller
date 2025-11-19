@@ -255,7 +255,7 @@
     <trip id="veh228" depart="110.92" from="834264168" to="87390172#2" departLane="best" type="veh_passenger" departSpeed="max"/>
     <trip id="veh229" depart="111.41" from="-834282140" to="-389382789" departLane="best" type="veh_passenger" departSpeed="max"/>
     <trip id="veh230" depart="111.89" from="985540780" to="-87391835" departLane="best" type="veh_passenger"/>
-    <trip id="veh231" depart="112.38" from="631979163#0" to="836222842" departLane="best" type="veh_passenger"/>
+    <trip id="veh231" depart="112.38" from="631979162#0" to="836222842" departLane="best" type="veh_passenger"/>
     <trip id="veh232" depart="112.87" from="87393065#2" to="-833959019#0" departLane="best" type="veh_passenger"/>
     <trip id="veh233" depart="113.35" from="-1016830795" to="-833605587" departLane="best" type="veh_passenger" departSpeed="max"/>
     <trip id="veh234" depart="113.84" from="-541727254#4" to="833915351" departLane="best" type="veh_passenger"/>
