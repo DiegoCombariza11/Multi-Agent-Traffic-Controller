@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-11-19 01:02:39 by Eclipse SUMO sumo Version 1.24.0
+<!-- generated on 2025-11-19T12:49:36.904203-05:00 by Eclipse SUMO GUI 1.25.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="./sumoData/TestLightsSogamosoNet.net.xml"/>
-        <route-files value="./sumoData/osm.passenger.trips.xml"/>
-        <additional-files value="./sumoData/output.add.xml"/>
+        <net-file value="/home/niichan/Documents/University/AI/Multi-Agent-Traffic-Controller/sumoData/TestLightsSogamosoNet.net.xml"/>
+        <route-files value="/home/niichan/Documents/University/AI/Multi-Agent-Traffic-Controller/sumoData/osm.passenger.trips.xml"/>
+        <additional-files value="/home/niichan/Documents/University/AI/Multi-Agent-Traffic-Controller/sumoData/output.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="./sumoData/tripinfos.xml"/>
-        <statistic-output value="./sumoData/stats.xml"/>
+        <tripinfo-output value="/home/niichan/Documents/University/AI/Multi-Agent-Traffic-Controller/sumoData/tripinfos.xml"/>
+        <statistic-output value="/home/niichan/Documents/University/AI/Multi-Agent-Traffic-Controller/sumoData/stats.xml"/>
     </output>
 
     <processing>
         <ignore-route-errors value="true"/>
-        <waiting-time-memory value="1000"/>
         <tls.actuated.jam-threshold value="30"/>
     </processing>
 
@@ -31,12 +30,22 @@
         <no-step-log value="true"/>
     </report>
 
-    <traci_server>
-        <remote-port value="43173"/>
-    </traci_server>
-
     <gui_only>
-        <gui-settings-file value="./sumoData/osm.view.xml"/>
+        <gui-settings-file value="/home/niichan/Documents/University/AI/Multi-Agent-Traffic-Controller/sumoData/osm.view.xml"/>
     </gui_only>
 
 </sumoConfiguration>
+-->
+
+<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
+    <performance clockBegin="1763574577.19" clockEnd="1763574617.70" clockDuration="40.50" traciDuration="0.00" realTimeFactor="44.52" vehicleUpdatesPerSecond="12611.11" personUpdatesPerSecond="0.00" begin="0.00" end="1803.00" duration="1803.00"/>
+    <vehicles loaded="1811" inserted="1803" running="340" waiting="0"/>
+    <teleports total="13" jam="5" yield="7" wrongLane="1"/>
+    <safety collisions="0" emergencyStops="0" emergencyBraking="1"/>
+    <persons loaded="0" running="0" jammed="0"/>
+    <personTeleports total="0" abortWait="0" wrongDest="0"/>
+    <vehicleTripStatistics count="1463" routeLength="3450.54" speed="12.41" duration="287.96" waitingTime="43.32" timeLoss="98.27" departDelay="0.05" departDelayWaiting="-1.00" totalTravelTime="421289.00" totalDepartDelay="73.00"/>
+    <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
+    <rideStatistics number="0"/>
+    <transportStatistics number="0"/>
+</statistics>

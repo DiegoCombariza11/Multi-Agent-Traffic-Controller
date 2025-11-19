@@ -12,13 +12,13 @@ SUMO_CMD = ["sumo", "-c", "./sumoData/SumoConfigSim.sumocfg", "--no-step-log", "
 # Parámetros de Q-Learning
 ALPHA = 0.1       # Tasa de aprendizaje
 GAMMA = 0.99      # Factor de descuento
-EPSILON = 1.0     # Exploración inicial
+EPSILON = 0     # Exploración inicial
 EPSILON_DECAY = 0.995
 MIN_EPSILON = 0.01
-EPISODES = 50     
-SIMULATION_STEPS_PER_ACTION = 5 # Segundos entre decisiones
+EPISODES = 1     
+SIMULATION_STEPS_PER_ACTION = 5 
 
-# --- CLASE AGENTE ---
+
 class QLearningAgent:
     def __init__(self, agent_id, action_space_size):
         self.id = agent_id
@@ -50,36 +50,35 @@ class QLearningAgent:
         self.q_table[state][action] = new_q
         return td_error 
 
-# --- FUNCIONES AUXILIARES ---
+
 def get_state(tls_id, controlled_lanes):
-    # Estado simplificado: Discretización de colas por carril
+
     state = ""
     for lane in controlled_lanes[tls_id]:
         q = traci.lane.getLastStepHaltingNumber(lane)
-        if q < 3: state += "0"      # Libre
-        elif q < 10: state += "1"   # Ocupado
-        else: state += "2"          # Congestionado
+        if q < 3: state += "0"      
+        elif q < 10: state += "1"   
+        else: state += "2"        
     return state
 
 def get_reward(tls_id, controlled_lanes):
-    # Recompensa local: Negativo de la espera total en esa intersección
+
     waiting_time = 0
     for lane in controlled_lanes[tls_id]:
         waiting_time += traci.lane.getLastStepHaltingNumber(lane)
     return -1 * waiting_time
 
 def get_total_phases(tls_id):
-    # Obtiene el número de fases del programa actual
+
     logic = traci.trafficlight.getAllProgramLogics(tls_id)[0]
     return len(logic.phases)
 
-# --- ENTRENAMIENTO MULTI-AGENTE ---
+
 def run():
-    # 1. Inicialización preliminar para detectar la red
+
     traci.start(SUMO_CMD)
-    tls_ids = traci.trafficlight.getIDList() # Obtener TODOS los semáforos
+    tls_ids = traci.trafficlight.getIDList() 
     
-    # Diccionarios para guardar información estática de cada semáforo
     controlled_lanes = {}
     num_phases = {}
     agents = {}
@@ -87,20 +86,15 @@ def run():
     print(f"Se detectaron {len(tls_ids)} semáforos controlables.")
     
     for tls in tls_ids:
-        # Guardar carriles que controla cada semáforo (eliminando duplicados con set)
         controlled_lanes[tls] = list(set(traci.trafficlight.getControlledLanes(tls)))
         num_phases[tls] = get_total_phases(tls)
         
-        # Crear un agente para este semáforo
-        # Acciones: 0 = Mantener Fase, 1 = Siguiente Fase
         agents[tls] = QLearningAgent(tls, action_space_size=2)
 
     traci.close()
 
-    # Métricas globales
     global_metrics = [] 
 
-    # 2. Bucle de Episodios
     for episode in range(EPISODES):
         print(f"Iniciando Episodio {episode + 1}/{EPISODES}")
         traci.start(SUMO_CMD)
@@ -109,58 +103,48 @@ def run():
         episode_reward = 0
         episode_squared_errors = []
         
-        # Estados iniciales para todos los agentes
         current_states = {tls: get_state(tls, controlled_lanes) for tls in tls_ids}
         
-        # Ejecutar simulación hasta que termine o llegue al límite
         while traci.simulation.getMinExpectedNumber() > 0 and step < 3600:
             
             actions = {}
             
-            # 1. TOMA DE DECISIONES (Todos los agentes deciden)
             for tls in tls_ids:
                 actions[tls] = agents[tls].choose_action(current_states[tls])
             
-            # 2. ACTUAR EN EL ENTORNO
+
             for tls in tls_ids:
                 if actions[tls] == 1:
-                    # Acción: Cambiar a la siguiente fase (cíclico)
+
                     current_p = traci.trafficlight.getPhase(tls)
                     next_p = (current_p + 1) % num_phases[tls]
                     traci.trafficlight.setPhase(tls, next_p)
                 else:
-                    # Acción: Mantener fase (no hacer nada explícito, SUMO mantiene por defecto)
-                    pass
 
-            # Avanzar simulación varios pasos (dar tiempo a que la física del tráfico reaccione)
+                    pass
             step_reward_accum = {tls: 0 for tls in tls_ids}
             for _ in range(SIMULATION_STEPS_PER_ACTION):
                 traci.simulationStep()
                 step += 1
-                # Acumular espera durante estos segundos
+
                 for tls in tls_ids:
                     step_reward_accum[tls] += get_reward(tls, controlled_lanes)
 
-            # 3. APRENDIZAJE (Todos los agentes aprenden de su resultado local)
+
             for tls in tls_ids:
                 reward = step_reward_accum[tls]
                 next_state = get_state(tls, controlled_lanes)
-                
-                # Actualizar tabla Q del agente específico
+
                 td_error = agents[tls].learn(current_states[tls], actions[tls], reward, next_state)
                 
-                # Guardar métricas
                 episode_squared_errors.append(td_error ** 2)
                 episode_reward += reward # Suma global para evaluar la red completa
                 
-                # Actualizar estado actual
                 current_states[tls] = next_state
 
         traci.close()
 
-        # Cálculo de Métricas del Episodio
         rms = math.sqrt(np.mean(episode_squared_errors)) if episode_squared_errors else 0
-        # Promedio de epsilon (ya que todos decaen igual, tomamos el de uno cualquiera o el promedio)
         avg_epsilon = agents[tls_ids[0]].epsilon 
         
         global_metrics.append({
@@ -172,19 +156,14 @@ def run():
         
         print(f"  -> Recompensa Global: {episode_reward:.2f} | RMS: {rms:.4f}")
 
-        # Decaer Epsilon para todos los agentes
         for tls in tls_ids:
             agents[tls].epsilon = max(MIN_EPSILON, agents[tls].epsilon * EPSILON_DECAY)
 
-    # --- GUARDAR RESULTADOS ---
-    
-    # 1. Métricas de entrenamiento
+
     df_metrics = pd.DataFrame(global_metrics)
     df_metrics.to_csv("multi_agent_metrics.csv", index=False)
     print("\nMétricas guardadas en 'multi_agent_metrics.csv'")
 
-    # 2. Tablas Q (Un archivo grande con columna 'Agent_ID' o múltiples archivos)
-    # Aquí guardaremos todo en un solo CSV con una columna extra identificando al semáforo
     all_q_data = []
     for tls, agent in agents.items():
         for s, values in agent.q_table.items():
