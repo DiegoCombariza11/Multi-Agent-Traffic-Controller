@@ -5,7 +5,6 @@ import numpy as np
 
 def run_baseline(sim_dir):
     print("--- CORRIENDO BASELINE (SIN IA) ---")
-    # Configuración idéntica al entrenamiento
     net_file = os.path.join(sim_dir, "TestLightsSogamosoNet.net.xml")
     route_file = os.path.join(sim_dir, "osm.passenger.trips.xml") 
     
@@ -20,7 +19,6 @@ def run_baseline(sim_dir):
     while step < 3600:
         traci.simulationStep()
         
-        # Recolectar métricas compatibles con sumo-rl
         vehs = traci.vehicle.getIDList()
         if vehs:
             speeds = [traci.vehicle.getSpeed(v) for v in vehs]
@@ -44,4 +42,4 @@ def run_baseline(sim_dir):
     print("Baseline guardado en 'datos_baseline.csv'")
 
 if __name__ == "__main__":
-    run_baseline("./sumoData") # Ajusta tu ruta
+    run_baseline("./sumoData")

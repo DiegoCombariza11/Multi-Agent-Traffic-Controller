@@ -9,7 +9,6 @@ def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
 def plot_learning_curve(results_dir="resultados_sumo_rl"):
-    # Busca todos los CSVs generados por sumo-rl
     pattern = os.path.join(results_dir, "*conn*.csv")
     files = glob.glob(pattern)
     
@@ -17,7 +16,6 @@ def plot_learning_curve(results_dir="resultados_sumo_rl"):
         print("No encontré archivos CSV. Revisa la ruta.")
         return
 
-    # Ordenarlos correctamente
     files.sort(key=natural_sort_key)
     
     rewards = []
@@ -28,15 +26,12 @@ def plot_learning_curve(results_dir="resultados_sumo_rl"):
 
     for f in files:
         df = pd.read_csv(f)
-        # Tomamos el promedio o suma final del episodio
-        rewards.append(df['system_total_waiting_time'].sum() * -1) # Aproximación si no guardaste reward explícito
+        rewards.append(df['system_total_waiting_time'].sum() * -1) 
         waiting_times.append(df['system_total_waiting_time'].mean())
         speeds.append(df['system_mean_speed'].mean())
 
-    # Graficar
     fig, axs = plt.subplots(3, 1, figsize=(10, 12))
     
-    # Velocidad
     axs[0].plot(range(1, len(files)+1), speeds, marker='o', color='green')
     axs[0].set_title('Velocidad Promedio por Episodio (Debe subir)')
     axs[0].set_ylabel('m/s')
@@ -54,5 +49,4 @@ def plot_learning_curve(results_dir="resultados_sumo_rl"):
     plt.show()
 
 if __name__ == "__main__":
-    # Asegúrate de poner la carpeta correcta donde están tus csv
     plot_learning_curve("./sumoData")
