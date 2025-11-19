@@ -6,14 +6,14 @@
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="TestLightsSogamosoNet.net.xml"/>
-        <route-files value="../GraphSogamoso/generated_scenarios/scenario_0001_dl_re_in_rep1/osm.passenger.trips.xml"/>
-        <additional-files value="../GraphSogamoso/generated_scenarios/scenario_0001_dl_re_in_rep1/output.add.xml,../GraphSogamoso/generated_scenarios/scenario_0001_dl_re_in_rep1/output.add.xml"/>
+           <net-file value="TestLightsSogamosoNet.net.xml"/>
+           <route-files value="osm.passenger.trips.xml"/>
+           <additional-files value="output.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="../GraphSogamoso/generated_scenarios/scenario_0001_dl_re_in_rep1/tripinfos.xml"/>
-        <statistic-output value="../GraphSogamoso/generated_scenarios/scenario_0001_dl_re_in_rep1/stats.xml"/>
+           <tripinfo-output value="tripinfos.xml"/>
+           <statistic-output value="stats.xml"/>
     </output>
 
     <processing>
