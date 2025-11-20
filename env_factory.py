@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import supersuit as ss
 from stable_baselines3.common.vec_env import VecMonitor
@@ -33,7 +33,7 @@ def build_vec_env(
     time_to_teleport: int = 300,
     route_file: Optional[str] = None,
     return_parallel_env: bool = False,
-) -> Union[VecMonitor, Tuple[VecMonitor, List[str]]]:
+) -> Union[VecMonitor, Tuple[VecMonitor, List[str], Dict[str, int]]]:
     """Create the same SUMO RL environment stack used during training/eval."""
 
     net_file = os.path.join(sim_dir, "TestLightsSogamosoNet.net.xml")
@@ -56,6 +56,10 @@ def build_vec_env(
     )
 
     agent_ids = list(par_env.possible_agents)
+    action_sizes: Dict[str, int] = {}
+    for agent in agent_ids:
+        action_space = par_env.action_spaces[agent] if hasattr(par_env, "action_spaces") else par_env.action_spaces(agent)
+        action_sizes[agent] = getattr(action_space, "n", 1)
 
     vec_env = ss.pad_observations_v0(par_env)
     vec_env = ss.pad_action_space_v0(vec_env)
@@ -64,6 +68,6 @@ def build_vec_env(
     vec_env = VecMonitor(vec_env)
 
     if return_parallel_env:
-        return vec_env, agent_ids
+        return vec_env, agent_ids, action_sizes
 
     return vec_env

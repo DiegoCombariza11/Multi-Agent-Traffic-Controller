@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import List
+from typing import Dict, List
 
 import numpy as np
 from stable_baselines3 import DQN
@@ -70,13 +70,30 @@ def _build_regions() -> List[RegionalAgent]:
     ]
 
 
+def _apply_phase_limits(actions: np.ndarray, action_sizes: Dict[str, int], tl_index_map: Dict[str, int]) -> None:
+    """Clamp each TL action to the valid number of phases learned during training."""
+
+    def clamp(action_row: np.ndarray) -> None:
+        for tl_id, idx in tl_index_map.items():
+            limit = action_sizes.get(tl_id)
+            if not limit or limit <= 0 or idx >= action_row.shape[-1]:
+                continue
+            action_row[idx] = int(action_row[idx]) % limit
+
+    if actions.ndim == 1:
+        clamp(actions)
+    else:
+        for row in actions:
+            clamp(row)
+
+
 def run():
-    env, traffic_lights = build_vec_env(
+    env, traffic_lights, action_sizes = build_vec_env(
         sim_dir=SIM_DIR,
         output_csv="./metrics/orchestrator_eval",
         use_gui=True,
         num_seconds=MAX_STEPS,
-        fixed_ts=False,
+        fixed_ts=True,
         sumo_warnings=False,
         return_parallel_env=True,
     )
@@ -92,13 +109,19 @@ def run():
     while step < MAX_STEPS:
         actions, _ = model.predict(obs, deterministic=True)
         actions = np.array(actions, copy=True)
+        _apply_phase_limits(actions, action_sizes, tl_index_map)
+        if step < 5:
+            print("raw actions normalized:", actions)
 
         info_dict = last_info[0] if isinstance(last_info, list) and last_info else {}
         for region in regions:
             region.step(info_dict, actions, tl_index_map)
+        _apply_phase_limits(actions, action_sizes, tl_index_map)
+
 
         obs, reward, dones, infos = env.step(actions)
         last_info = infos
+        
         step += 1
 
         if np.any(dones):
