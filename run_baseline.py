@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 def run_baseline(sim_dir):
-    print("--- CORRIENDO BASELINE (SIN IA) ---")
+    print("--- BASELINE (SIN IA) ---")
     net_file = os.path.join(sim_dir, "TestLightsSogamosoNet.net.xml")
     route_file = os.path.join(sim_dir, "osm.passenger.trips.xml") 
     

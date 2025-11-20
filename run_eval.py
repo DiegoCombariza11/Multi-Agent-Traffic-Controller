@@ -54,14 +54,6 @@ def run_eval(sim_dir, model_path):
     try:
         while True:
             action, _ = model.predict(obs, deterministic=True)
-    
-            # if isinstance(action, np.ndarray):
-            #     unique, counts = np.unique(action, return_counts=True)
-            #     for u, c in zip(unique, counts):
-            #         actions_stats[int(u)] += int(c)
-            # else:
-            #     actions_stats[int(action)] += 1
-
             step_result = env.step(action)
             
             if len(step_result) == 4:
@@ -89,4 +81,4 @@ def run_eval(sim_dir, model_path):
         print(f"Decisiones finales: Mantener (0): {actions_stats[0]} | Cambiar (1): {actions_stats[1]}")
 
 if __name__ == "__main__":
-    run_eval(sim_dir="./sumoData", model_path="./models/sumo_rl_final_model_v6")
+    run_eval(sim_dir="./sumoData", model_path="./models/sumo_rl_final_model_v3")

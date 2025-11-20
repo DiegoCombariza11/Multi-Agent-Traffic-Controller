@@ -1,25 +1,58 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df_base = pd.read_csv("datos_baseline.csv")
-df_ai = pd.read_csv("datos_IA_evaluacion_conn1_ep1.csv") 
+file_1 = "./graphics/datos_baseline.csv"          
+file_2 = "./graphics/datos_IA_evaluacion_conn1_ep1_v3.csv"   
+file_3 = "./graphics/datos_IA_evaluacion_conn1_ep1_v6.csv"  
 
-fig, axs = plt.subplots(2, 1, figsize=(10, 8))
 
-axs[0].plot(df_base['step'], df_base['system_mean_speed'], label='Sin IA (Baseline)', color='gray', linestyle='--')
-axs[0].plot(df_ai['step'], df_ai['system_mean_speed'], label='Con IA (DQN)', color='green')
-axs[0].set_title('Comparativa de Velocidad Promedio')
-axs[0].set_ylabel('m/s')
-axs[0].legend()
-axs[0].grid(True)
+label_1 = "Baseline (No AI)"
+label_2 = "AI Model  V1"
+label_3 = "AI Model  V2"
 
-axs[1].plot(df_base['step'], df_base['system_total_waiting_time'], label='Sin IA (Baseline)', color='gray', linestyle='--')
-axs[1].plot(df_ai['step'], df_ai['system_total_waiting_time'], label='Con IA (DQN)', color='blue')
-axs[1].set_title('Comparativa de Tiempo de Espera Acumulado')
-axs[1].set_ylabel('Segundos')
-axs[1].legend()
-axs[1].grid(True)
+
+
+df1 = pd.read_csv(file_1)
+df2 = pd.read_csv(file_2)
+df3 = pd.read_csv(file_3)
+
+
+plt.figure(figsize=(10, 6)) 
+
+
+plt.plot(df1['step'], df1['system_mean_speed'], label=label_1, color='gray', linestyle='--', alpha=0.7)
+plt.plot(df2['step'], df2['system_mean_speed'], label=label_2, color='green')
+plt.plot(df3['step'], df3['system_mean_speed'], label=label_3, color='blue')
+
+
+plt.title('System Mean Speed Comparison')
+plt.xlabel('Simulation Step')
+plt.ylabel('Speed (m/s)')
+plt.legend()
+plt.grid(True)
+
 
 plt.tight_layout()
-plt.savefig("IA_vs_Baseline.png")
+plt.savefig("Comparison_Mean_Speed.png") 
+plt.show() 
+
+
+
+plt.figure(figsize=(10, 6)) 
+
+
+plt.plot(df1['step'], df1['system_total_waiting_time'], label=label_1, color='gray', linestyle='--', alpha=0.7)
+plt.plot(df2['step'], df2['system_total_waiting_time'], label=label_2, color='green')
+plt.plot(df3['step'], df3['system_total_waiting_time'], label=label_3, color='blue')
+
+
+plt.title('System Total Waiting Time Comparison')
+plt.xlabel('Simulation Step')
+plt.ylabel('Total Waiting Time (seconds)')
+plt.legend()
+plt.grid(True)
+
+
+plt.tight_layout()
+plt.savefig("Comparison_Waiting_Time.png") 
 plt.show()

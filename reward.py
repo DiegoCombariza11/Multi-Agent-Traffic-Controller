@@ -1,7 +1,6 @@
 def reward_function(traffic_signal):
     """
-    Combina 'Diff Waiting Time' (recompensa vaciar colas) con penalización por espera excesiva.
-    Evita valores exponenciales que rompen la red neuronal.
+    Mix 'Diff Waiting Time' (Queue Theory) with penalty for hight waiting time
     """
     diff_wait = traffic_signal._diff_waiting_time_reward()
     
