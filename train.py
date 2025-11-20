@@ -34,7 +34,7 @@ def make_env(sim_dir, output_dir, use_gui=False):
         min_green=10,
         max_green=60,
         
-        fixed_ts=True,    
+        fixed_ts=False,    
         reward_fn=reward_function, 
         
         sumo_warnings=False,
@@ -72,12 +72,12 @@ if __name__ == "__main__":
         verbose=1, 
         learning_rate=0.001, 
         buffer_size=100000,   
-        learning_starts=5000, 
+        learning_starts=2000, 
         batch_size=256, 
         gamma=0.99,           
         train_freq=4,
-        target_update_interval=2000,
-        exploration_fraction=0.4, 
+        target_update_interval=1000,
+        exploration_fraction=0.5, 
         exploration_final_eps=0.05 
     )
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     print(f"Entrenando {args.steps} pasos... (Paciencia, esto toma tiempo)")
     model.learn(total_timesteps=args.steps, callback=checkpoint_callback)
     
-    save_path = os.path.join(args.output_model_dir, "sumo_rl_final_model_v1")
+    save_path = os.path.join(args.output_model_dir, "sumo_rl_final_model_v6")
     model.save(save_path)
     print("Modelo guardado exitosamente.")
     env.close()
