@@ -26,6 +26,7 @@ def load_csv(path: str) -> pd.DataFrame:
 def plot_comparison(
     baseline_df: pd.DataFrame,
     orchestrator_df: pd.DataFrame,
+    evaluation_df: Optional[pd.DataFrame],
     labels: Dict[str, str],
     output_path: Optional[str] = None,
 ) -> None:
@@ -33,9 +34,7 @@ def plot_comparison(
     step_col = "step"
 
     for ax, (metric, title) in zip(axes, METRICS):
-        if metric not in baseline_df.columns and metric not in orchestrator_df.columns:
-            ax.set_title(f"{title} (missing in both CSVs)")
-            continue
+        has_data = False
 
         if metric in baseline_df.columns:
             ax.plot(
@@ -44,6 +43,7 @@ def plot_comparison(
                 label=labels["baseline"],
                 color="#1f77b4",
             )
+            has_data = True
         if metric in orchestrator_df.columns:
             ax.plot(
                 orchestrator_df[step_col],
@@ -51,6 +51,19 @@ def plot_comparison(
                 label=labels["orchestrator"],
                 color="#d62728",
             )
+            has_data = True
+        if evaluation_df is not None and metric in evaluation_df.columns:
+            ax.plot(
+                evaluation_df[step_col],
+                evaluation_df[metric],
+                label=labels["evaluation"],
+                color="#2ca02c",
+            )
+            has_data = True
+
+        if not has_data:
+            ax.set_title(f"{title} (missing in both CSVs)")
+            continue
 
         ax.set_ylabel(title)
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
@@ -83,6 +96,12 @@ def parse_args() -> argparse.Namespace:
         help="Path to orchestrator CSV exported by the RL pipeline.",
     )
     parser.add_argument(
+        "--evaluation",
+        type=str,
+        default="./graphics/datos_IA_evaluacion_conn1_ep1.csv",
+        help="Optional evaluation CSV to overlay (set to '' to skip).",
+    )
+    parser.add_argument(
         "--output",
         type=str,
         default="./metrics/comparison.png",
@@ -102,10 +121,16 @@ def main() -> None:
     baseline_df = load_csv(args.baseline)
     orchestrator_df = load_csv(args.orchestrator)
 
+    evaluation_df = None
+    if args.evaluation:
+        evaluation_df = load_csv(args.evaluation)
+
     labels = {"baseline": "Baseline", "orchestrator": "Orchestrator"}
+    if evaluation_df is not None:
+        labels["evaluation"] = "Evaluation"
     output_path = None if args.show else args.output
 
-    plot_comparison(baseline_df, orchestrator_df, labels, output_path)
+    plot_comparison(baseline_df, orchestrator_df, evaluation_df, labels, output_path)
 
 
 if __name__ == "__main__":
