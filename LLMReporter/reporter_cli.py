@@ -57,17 +57,17 @@ def ask_once(question: str, cache: AnswerCache, analyzer: TrafficAnalyzer, llm: 
 
 
 def interactive(cache: AnswerCache, analyzer: TrafficAnalyzer, llm: LLMClient):
-    print("[cli] Modo interactivo. Ctrl+C para salir.")
+    print("[cli] Interactive Mode. Ctrl+C to quit.")
     while True:
         try:
-            q = input("› pregunta: ").strip()
+            q = input("› Question: ").strip()
         except (EOFError, KeyboardInterrupt):
-            print("\n[cli] Saliendo...")
+            print("\n[cli] Quitting...")
             break
         if not q:
             continue
         result = ask_once(q, cache, analyzer, llm)
-        print("[respuesta]", result["answer"])
+        print("[answer]", result["answer"])
 
 
 def main(argv: list[str]):

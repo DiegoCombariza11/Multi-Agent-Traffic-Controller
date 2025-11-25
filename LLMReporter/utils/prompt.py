@@ -76,22 +76,28 @@ def build_prompt(
     lines = "\n".join(format_record(r) for r in subset)
     
     agents_section = ""
-    # Only include agents section if agents data is provided AND not empty
     if agents:
         # Use structured agent records if available
         agents_section = "\n" + format_agents_list(agents)
     elif agents_data:
-        # Fallback to legacy dict format
+
         agents_section = "\n" + format_agents_summary(agents_data)
     
-    base_instruction = "Analiza los siguientes datos de tráfico y responde a la pregunta en español."
+    base_instruction = ""
+    base_instruction = '''
+        You are a Traffic reporter your main context will be Sogamoso City Traffic.
+        Analyze the following traffic data and answer in English using a casual tone. 
+        Just answer with your data for Sogamoso City. 
+        If anohter city is mentioned answer in a polite way you do not have that city information.
+        If the user ask an urelated question answer what are you capabilities as traffic reporter and say that you can't answer that question.
+    '''
     if agents_section:
-        base_instruction += " Incluye información de agentes regionales SOLO si la pregunta es explícitamente sobre agentes, intervenciones o coordinación regional."
+        base_instruction += "Add the regional agents ONLY if the question ask about them or intervetions or regional coordination"
     
     return (
         f"{base_instruction}\n"
-        f"Pregunta: {question}\n"  # pregunta del usuario
-        f"Registros de Tráfico ({len(subset)}/{len(records)}):\n{lines}"  # lista formateada
+        f"Question: {question}\n"  # pregunta del usuario
+        f"Traffic Registers ({len(subset)}/{len(records)}):\n{lines}"  # lista formateada
         f"{agents_section}\n"  # datos de agentes regionales (solo si están presentes)
-        "Si la pregunta implica comparación, menciona las vías con mayor y menor congestión."
+        "If the user question implies comparison, mention the road with the highest and lowest congestion."
     )
