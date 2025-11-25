@@ -35,8 +35,8 @@ def get_settings() -> Settings:
         candidates = [
             Path("resumen_simulacion.json"),
             Path("edge_summary.json"),
-            Path("reporter/core/resumen_simulacion.json"),
-            Path("reporter/core/edge_summary.json"),
+            Path("LLMreporter/core/resumen_simulacion.json"),
+            Path("LLMreporter/core/edge_summary.json"),
         ]
         found = None
         for c in candidates:

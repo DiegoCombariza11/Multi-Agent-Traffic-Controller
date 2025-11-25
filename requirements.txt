@@ -30,6 +30,7 @@ pettingzoo==1.25.0
 pillow==12.0.0
 proto-plus==1.26.1
 protobuf==5.29.5
+folium==0.17.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
 pydantic==2.12.4
@@ -49,4 +50,4 @@ typing_extensions==4.15.0
 tzdata==2025.2
 uritemplate==4.2.0
 urllib3==2.5.0
-
+fastapi

@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-11-19T23:53:53.527477-05:00 by Eclipse SUMO GUI 1.25.0
+<!-- generated on 2025-11-25 01:38:01 by Eclipse SUMO GUI Version 1.24.0
 <sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
-        <net-file value="./sumoData/TestLightsSogamosoNet.net.xml"/>
-        <route-files value="./sumoData/osm.passenger.trips.xml"/>
-        <additional-files value="./sumoData/output.add.xml"/>
+        <net-file value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\TestLightsSogamosoNet.net.xml"/>
+        <route-files value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\osm.passenger.trips.xml"/>
+        <additional-files value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\output.add.xml"/>
     </input>
 
     <output>
-        <tripinfo-output value="./sumoData/tripinfos.xml"/>
-        <statistic-output value="./sumoData/stats.xml"/>
+        <tripinfo-output value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\tripinfos.xml"/>
+        <statistic-output value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\stats.xml"/>
     </output>
 
     <processing>
@@ -30,12 +30,8 @@
         <no-step-log value="true"/>
     </report>
 
-    <traci_server>
-        <remote-port value="54018"/>
-    </traci_server>
-
     <gui_only>
-        <gui-settings-file value="./sumoData/osm.view.xml"/>
+        <gui-settings-file value="C:\Users\Bienvenido\Documents\UPTC\OctavoSemestre\Inteligencia\ProyectoFinal\El-agente-berraco-de-movilidad\sumoData\osm.view.xml"/>
     </gui_only>
 
 </sumoConfiguration>

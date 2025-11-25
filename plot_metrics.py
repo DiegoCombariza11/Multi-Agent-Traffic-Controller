@@ -30,10 +30,10 @@ def plot_comparison(
     labels: Dict[str, str],
     output_path: Optional[str] = None,
 ) -> None:
-    fig, axes = plt.subplots(len(METRICS), 1, figsize=(10, 12), sharex=True)
     step_col = "step"
-
-    for ax, (metric, title) in zip(axes, METRICS):
+    
+    for metric, title in METRICS:
+        fig, ax = plt.subplots(figsize=(10, 6))
         has_data = False
 
         if metric in baseline_df.columns:
@@ -42,43 +42,52 @@ def plot_comparison(
                 baseline_df[metric],
                 label=labels["baseline"],
                 color="#1f77b4",
+                linewidth=2,
             )
             has_data = True
         if metric in orchestrator_df.columns:
             ax.plot(
                 orchestrator_df[step_col],
                 orchestrator_df[metric],
-                label=labels["orchestrator"],
+                label=labels["regional_agents"],
                 color="#d62728",
+                linewidth=2,
             )
             has_data = True
         if evaluation_df is not None and metric in evaluation_df.columns:
             ax.plot(
                 evaluation_df[step_col],
                 evaluation_df[metric],
-                label=labels["evaluation"],
+                label=labels["local_agents"],
                 color="#2ca02c",
+                linewidth=2,
             )
             has_data = True
 
         if not has_data:
-            ax.set_title(f"{title} (missing in both CSVs)")
+            print(f"Warning: {metric} missing in all CSVs, skipping plot.")
+            plt.close(fig)
             continue
 
-        ax.set_ylabel(title)
+        ax.set_xlabel("Simulation Step (s)", fontsize=12)
+        ax.set_ylabel(title, fontsize=12)
+        ax.set_title(title, fontsize=14, fontweight='bold')
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
-        ax.legend(loc="best")
+        ax.legend(loc="best", fontsize=10)
+        fig.tight_layout()
 
-    axes[-1].set_xlabel("Simulation Step (s)")
-    fig.tight_layout()
-
-    if output_path:
-        output_dir = os.path.dirname(output_path) or "."
-        os.makedirs(output_dir, exist_ok=True)
-        fig.savefig(output_path, dpi=150)
-        print(f"Comparison plot saved to: {output_path}")
-    else:
-        plt.show()
+        if output_path:
+            output_dir = os.path.dirname(output_path) or "."
+            os.makedirs(output_dir, exist_ok=True)
+            # Generate individual filename for each metric
+            base_name = os.path.splitext(output_path)[0]
+            ext = os.path.splitext(output_path)[1] or ".png"
+            metric_output = f"{base_name}_{metric}{ext}"
+            fig.savefig(metric_output, dpi=150, bbox_inches='tight')
+            print(f"Plot saved to: {metric_output}")
+            plt.close(fig)
+        else:
+            plt.show()
 
 
 def parse_args() -> argparse.Namespace:
@@ -86,17 +95,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--baseline",
         type=str,
-        default="./datos_baseline.csv",
+        default="./metrics/datos_baseline.csv",
         help="Path to baseline CSV (with columns step/system_*).",
     )
     parser.add_argument(
-        "--orchestrator",
+        "--regional-agents",
         type=str,
         default="./metrics/orchestrator_eval_conn1_ep1.csv",
         help="Path to orchestrator CSV exported by the RL pipeline.",
     )
     parser.add_argument(
-        "--evaluation",
+        "--local-agents",
         type=str,
         default="./graphics/datos_IA_evaluacion_conn1_ep1.csv",
         help="Optional evaluation CSV to overlay (set to '' to skip).",
@@ -119,19 +128,17 @@ def main() -> None:
     args = parse_args()
 
     baseline_df = load_csv(args.baseline)
-    orchestrator_df = load_csv(args.orchestrator)
+    regional_agents_df = load_csv(args.regional_agents)
 
-    evaluation_df = None
-    if args.evaluation:
-        evaluation_df = load_csv(args.evaluation)
-
-    labels = {"baseline": "Baseline", "orchestrator": "Orchestrator"}
-    if evaluation_df is not None:
-        labels["evaluation"] = "Evaluation"
+    local_agents_df = None
+    if args.local_agents:
+        local_agents_df = load_csv(args.local_agents)
+    labels = {"baseline": "Baseline", "regional_agents": "Regional Agents"}
+    if local_agents_df is not None:
+        labels["local_agents"] = "Local Agents"
     output_path = None if args.show else args.output
 
-    plot_comparison(baseline_df, orchestrator_df, evaluation_df, labels, output_path)
-
+    plot_comparison(baseline_df, regional_agents_df, local_agents_df, labels, output_path)
 
 if __name__ == "__main__":
     main()

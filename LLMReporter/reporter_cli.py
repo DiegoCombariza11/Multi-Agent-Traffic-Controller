@@ -20,12 +20,12 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from reporter.core.config import get_settings, DEFAULT_OLLAMA_MODEL
-from reporter.services.data_loader import load_data
-from reporter.core.indexes import Indexes
-from reporter.core.cache import AnswerCache
-from reporter.services.llm_client import LLMClient
-from reporter.services.analyzer import TrafficAnalyzer
+from core.config import get_settings, DEFAULT_OLLAMA_MODEL
+from services.data_loader import load_data, load_agents_summary, load_agents
+from core.indexes import Indexes
+from core.cache import AnswerCache
+from services.llm_client import LLMClient
+from services.analyzer import TrafficAnalyzer
 
 
 def init_components():
@@ -34,10 +34,16 @@ def init_components():
     except Exception as exc:  # noqa: BLE001
         raise SystemExit(f"[error] Configuración de datos no encontrada: {exc}")
     data = load_data(settings.data_path)
-    indexes = Indexes(data)
+    
+    # Load agents summary if available
+    agents_path = settings.data_path.parent / "agents_summary.json"
+    agents_data = load_agents_summary(agents_path)
+    agents_records = load_agents(agents_path)
+    
+    indexes = Indexes(data, agents_records)
     cache = AnswerCache(settings.cache_size)
     llm = LLMClient(settings.ollama_model)
-    analyzer = TrafficAnalyzer(indexes, data)
+    analyzer = TrafficAnalyzer(indexes, data, agents_data)
     return settings, data, indexes, cache, llm, analyzer
 
 

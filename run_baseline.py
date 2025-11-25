@@ -5,7 +5,7 @@ import numpy as np
 
 def run_baseline(sim_dir):
     print("--- BASELINE (SIN IA) ---")
-    net_file = os.path.join(sim_dir, "TestLightsSogamosoNet.net.xml")
+    net_file = os.path.join(sim_dir, "osm.net.xml")
     route_file = os.path.join(sim_dir, "osm.passenger.trips.xml") 
     
     sumo_cmd = ["sumo", "-n", net_file, "-r", route_file,
@@ -38,8 +38,8 @@ def run_baseline(sim_dir):
     
     traci.close()
     df = pd.DataFrame(metrics)
-    df.to_csv("datos_baseline.csv", index=False)
-    print("Baseline guardado en 'datos_baseline.csv'")
+    df.to_csv("./metrics/datos_baseline.csv", index=False)
+    print("Baseline guardado en './metrics/datos_baseline.csv'")
 
 if __name__ == "__main__":
-    run_baseline("./sumoData")
+    run_baseline("./sumoData/Baseline")

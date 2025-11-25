@@ -22,3 +22,25 @@ class SimulationRecord:
             avg_congestion_pct=d.get("avg_congestion_pct"),
             raw=d,
         )
+
+
+@dataclass
+class AgentRecord:
+    """Regional agent intervention record."""
+    region_id: str
+    total_interventions: int
+    avg_queue_at_intervention: float
+    intervention_periods: List[Dict[str, Any]]
+    traffic_lights: List[str]
+    raw: Optional[Dict[str, Any]] = None
+
+    @staticmethod
+    def from_dict(d: Dict[str, Any]) -> "AgentRecord":
+        return AgentRecord(
+            region_id=d.get("region_id", ""),
+            total_interventions=d.get("total_interventions", 0),
+            avg_queue_at_intervention=d.get("avg_queue_at_intervention", 0.0),
+            intervention_periods=d.get("intervention_periods", []),
+            traffic_lights=d.get("traffic_lights", []),
+            raw=d,
+        )
